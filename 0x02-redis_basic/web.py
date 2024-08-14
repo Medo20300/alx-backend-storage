@@ -22,10 +22,9 @@ def data_cacher(method: Callable) -> Callable:
         redis_store.incr(f'count:{url}')
         result = redis_store.get(f'result:{url}')
         if result:
-            print("Cache hit")
             return result.decode('utf-8')
-        print("Cache miss")
         result = method(url)
+        redis_store.set(f'count:{url}', 0)
         redis_store.setex(f'result:{url}', 10, result)
         return result
     return invoker
@@ -37,18 +36,3 @@ def get_page(url: str) -> str:
     and tracking the request.
     '''
     return requests.get(url).text
-
-
-if __name__ == "__main__":
-     url = "https://httpbin.org/delay/5"
-    
-    print("First request:")
-        print(get_page(url))
-
-            print("\nSecond request:")
-                print(get_page(url))
-
-                    count = redis_store.get(f'count:{url}')
-                        if count:
-                                    print("\nVisit count:")
-                                            print(count.decode('utf-8'))
