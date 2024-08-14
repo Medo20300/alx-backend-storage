@@ -6,29 +6,30 @@ import requests
 from functools import wraps
 from typing import Callable
 
-# Connect to Redis
-redis_store = redis.Redis(host='localhost', port=6379, db=0)
+
+redis_store = redis.Redis()
 '''The module-level Redis instance.
 '''
+
 
 def data_cacher(method: Callable) -> Callable:
     '''Caches the output of fetched data.
     '''
     @wraps(method)
-    def invoker(url: str) -> str:
+    def invoker(url) -> str:
         '''The wrapper function for caching the output.
         '''
-        print(f'Fetching URL: {url}')
         redis_store.incr(f'count:{url}')
         result = redis_store.get(f'result:{url}')
         if result:
-            print('Cache hit')
+            print("Cache hit")
             return result.decode('utf-8')
-        print('Cache miss')
+        print("Cache miss")
         result = method(url)
         redis_store.setex(f'result:{url}', 10, result)
         return result
     return invoker
+
 
 @data_cacher
 def get_page(url: str) -> str:
@@ -37,11 +38,17 @@ def get_page(url: str) -> str:
     '''
     return requests.get(url).text
 
+
 if __name__ == "__main__":
-    url = "https://httpbin.org/delay/3"  # Example URL with a 3 seconds delay
-    print('First request:')
-    print(get_page(url))
-    print('Second request:')
-    print(get_page(url))
-    print('Visit count:')
-    print(redis_store.get(f'count:{url}').decode('utf-8'))  # Check the count
+     url = "https://httpbin.org/delay/5"
+    
+    print("First request:")
+        print(get_page(url))
+
+            print("\nSecond request:")
+                print(get_page(url))
+
+                    count = redis_store.get(f'count:{url}')
+                        if count:
+                                    print("\nVisit count:")
+                                            print(count.decode('utf-8'))
